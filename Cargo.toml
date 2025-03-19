@@ -1,10 +1,10 @@
 [package]
-name = "pcf8574"
+name = "hmc5883l"
 version = "0.1.0"
 edition = "2021"
 
 [lib] 
-name = "pcf8574"
+name = "hmc5883l"
 path = "src/lib.rs"
 
 [features]
