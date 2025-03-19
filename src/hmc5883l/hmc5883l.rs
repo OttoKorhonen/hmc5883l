@@ -1,58 +1,64 @@
 use crate::hmc5883l::{CompassPoint, Gain, Mode};
 use core::marker::PhantomData;
 use core::{fmt, i32};
-use embedded_hal::i2c::I2c as HalI2c;
-use esp_hal::delay::Delay;
+use embedded_hal::{i2c::SevenBitAddress, delay::DelayNs};
 use heapless::Vec;
 use libm::atan2f;
 
 const PI: f32 = 3.14159265358979323846264338327950288_f32;
 
-pub struct Hmc5883l<I2c, E> {
+pub struct Hmc5883l<I2c, E, D> {
     i2c: I2c,
-    device_address: u8,
+    device_address: SevenBitAddress,
+    delay: D,
     _error: PhantomData<E>,
 }
 
-impl<I2c, E> Hmc5883l<I2c, E>
+impl<I2c, E, D> Hmc5883l<I2c, E, D>
 where
-    I2c: HalI2c<Error = E>,
+    I2c: embedded_hal::i2c::I2c<Error = E>,
     E: fmt::Debug,
+    D: DelayNs
+
 {
     //read 0x3D
     //write 0x3C
 
-    pub fn new(i2c: I2c, device_address: u8) -> Self {
+    pub fn new(i2c: I2c, device_address: SevenBitAddress, delay: D) -> Self {
         Self {
             i2c,
             device_address,
+            delay,
             _error: PhantomData,
         }
     }
 
     fn get_x_register(&mut self) -> [u8; 2] {
-        let cmd = [0x03];  // X-akselin MSB
-        let mut response = [0u8; 6]; // Lue kaikki akselidatat samalla
-        self.i2c.write_read(self.device_address, &cmd, &mut response).unwrap();
-    
-        [response[0], response[1]] // Palauta vain X:n MSB ja LSB
+        let cmd = [0x03];
+        let mut response = [0u8; 6];
+        self.i2c
+            .write_read(self.device_address, &cmd, &mut response)
+            .unwrap();
+
+        [response[0], response[1]] // return msb & lsb
     }
 
     fn get_y_register(&mut self) -> [u8; 2] {
-        let cmd = [0x07];  // X-akselin MSB
-        let mut response = [0u8; 6]; // Lue kaikki akselidatat samalla
-        self.i2c.write_read(self.device_address, &cmd, &mut response).unwrap();
-    
-        [response[0], response[1]] // Palauta vain X:n MSB ja LSB
+        let cmd = [0x07];
+        let mut response = [0u8; 6]; 
+        self.i2c
+            .write_read(self.device_address, &cmd, &mut response)
+            .unwrap();
+
+        [response[0], response[1]] // return msb & lsb
     }
 
     ///take single measure
     pub fn single_measurement(&mut self, gain: Gain) -> f32 {
-        let delay = Delay::new();
         self.cra();
         self.crb(gain);
         self.mode_register(Mode::Single);
-        delay.delay_millis(6);
+        self.delay.delay_ms(6);
 
         let x = self.get_x_register();
         let y = self.get_y_register();
@@ -66,24 +72,21 @@ where
         angle
     }
 
-
     ///take continuous measurement
     pub fn continuous_measure(&mut self, gain: Gain) -> f32 {
-        let delay = Delay::new();
         self.cra();
         self.crb(gain);
         self.mode_register(Mode::Continuous);
-        delay.delay_millis(6);
+        self.delay.delay_ms(6);
 
         loop {
-
             let x = self.get_x_register();
             let y = self.get_y_register();
 
             let response = [x[0], x[1], y[0], y[1]];
             let gauss_values = self.measure_gauss(&response);
 
-            delay.delay_millis(67);
+            self.delay.delay_ms(67);
 
             return self.atan2_custom(gauss_values[0], gauss_values[1]);
         }
