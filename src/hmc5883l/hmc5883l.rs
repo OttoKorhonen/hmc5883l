@@ -1,7 +1,8 @@
 use crate::hmc5883l::{CompassPoint, Gain, Mode};
 use core::marker::PhantomData;
 use core::{fmt, i32};
-use embedded_hal::{i2c::SevenBitAddress, delay::DelayNs};
+use embedded_hal::{delay::DelayNs, i2c::SevenBitAddress};
+use esp_println::println;
 use heapless::Vec;
 use libm::atan2f;
 
@@ -18,8 +19,7 @@ impl<I2c, E, D> Hmc5883l<I2c, E, D>
 where
     I2c: embedded_hal::i2c::I2c<Error = E>,
     E: fmt::Debug,
-    D: DelayNs
-
+    D: DelayNs,
 {
     //read 0x3D
     //write 0x3C
@@ -45,12 +45,27 @@ where
 
     fn get_y_register(&mut self) -> [u8; 2] {
         let cmd = [0x07];
-        let mut response = [0u8; 6]; 
+        let mut response = [0u8; 6];
         self.i2c
             .write_read(self.device_address, &cmd, &mut response)
             .unwrap();
 
         [response[0], response[1]] // return msb & lsb
+    }
+
+    pub fn get_compasspoint(&mut self, angle: f32) -> CompassPoint {
+        match angle {
+            0.0..22.0 => CompassPoint::North,
+            23.0..66.0 => CompassPoint::NorthEast,
+            67.0..112.0 => CompassPoint::East,
+            112.0..156.0 => CompassPoint::SouthEast,
+            157.0..201.0 => CompassPoint::South,
+            202.0..247.0 => CompassPoint::SouthWest,
+            248.0..292.0 => CompassPoint::West,
+            293.0..337.0 => CompassPoint::NorthWest,
+            338.0..360.0 => CompassPoint::North,
+            _ => CompassPoint::North,
+        }
     }
 
     ///take single measure
@@ -67,9 +82,7 @@ where
 
         let gauss_values = self.measure_gauss(&response);
 
-        let angle = self.atan2_custom(gauss_values[1], gauss_values[2]);
-
-        angle
+        self.atan2_custom(gauss_values[1], gauss_values[0])
     }
 
     ///take continuous measurement
@@ -88,7 +101,7 @@ where
 
             self.delay.delay_ms(67);
 
-            return self.atan2_custom(gauss_values[0], gauss_values[1]);
+            self.atan2_custom(gauss_values[1], gauss_values[0]);
         }
     }
 
@@ -99,7 +112,7 @@ where
         if angle < 0.0 {
             angle += 360.0;
         }
-        // println!("Angle: {:.2}°", angle);
+        println!("Angle: {:.2}°", angle);
         angle
     }
 
@@ -109,7 +122,7 @@ where
         for chunk in raw_data.chunks(2) {
             let mut direction = ((chunk[0] as i32) << 8) | (chunk[1] as i32);
 
-            // Käsittele negatiiviset luvut kahden komplementin mukaisesti
+            //handle negative values
             if direction > 0x7FFF {
                 direction -= 0x10000 as i32;
             }
@@ -123,7 +136,7 @@ where
     }
 
     fn cra(&mut self) {
-        let cmd = [0x00, 0b0011_0000]; // Configuration Register A (0x00)
+        let cmd = [0x00, 0b0001_1100]; // Configuration Register A (0x00)
         self.i2c.write(self.device_address, &cmd).unwrap();
     }
 
