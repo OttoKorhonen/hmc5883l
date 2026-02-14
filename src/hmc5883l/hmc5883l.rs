@@ -1,10 +1,9 @@
-use crate::hmc5883l::{CompassPoint, Gain, Mode};
-use core::marker::PhantomData;
-use core::{fmt, i32};
-use embedded_hal::{delay::DelayNs, i2c::SevenBitAddress};
-use esp_println::println;
-use heapless::Vec;
+use crate::hmc5883l::CompassPoint;
+use core::fmt;
+use embedded_hal::i2c::SevenBitAddress;
 use libm::atan2f;
+use crate::config::{RegisterA, RegisterB, ModeRegister, Gain, OperatingMode};
+use crate::errors::hmc8553lerror::Hmc8553lError;
 
 const PI: f32 = 3.14159265358979323846264338327950288_f32;
 
@@ -26,6 +25,31 @@ where
             i2c,
             device_address,
         }
+    }
+    
+    pub fn set_register_a(&mut self, register: RegisterA) -> Result<(), Hmc8553lError<I2c::Error>> {
+        self.i2c.write(self.device_address, &[register.get_value()])?;
+        Ok(())
+    }
+
+    pub fn set_register_b(&mut self, register: RegisterB) -> Result<(), Hmc8553lError<I2c::Error>> {
+        self.i2c.write(self.device_address, &[register.get_value()])?;
+        Ok(())
+    }
+    
+    pub fn set_mode_register(&mut self, mode_register: ModeRegister) -> Result<(), Hmc8553lError<I2c::Error>> {
+        self.i2c.write(self.device_address, &[mode_register.get_value()])?;
+        Ok(())
+    }
+    
+    pub fn set_gain(&mut self, gain: Gain) -> Result<(), Hmc8553lError<I2c::Error>> {
+        self.i2c.write(self.device_address, &[gain.get_value()])?;
+        Ok(())
+    }
+    
+    pub fn set_operating_mode(&mut self, operating_mode: OperatingMode) -> Result<(), Hmc8553lError<I2c::Error>> {
+        self.i2c.write(self.device_address, &[operating_mode.get_value()])?;
+        Ok(())
     }
 
     // fn get_x_register(&mut self) -> [u8; 2] {

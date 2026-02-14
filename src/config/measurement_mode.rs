@@ -9,7 +9,6 @@ pub enum MeasurementMode {
     ///Negative bias configuration for X, Y and Z axes. In this configuration, a negative
     /// current is forced across the resistive load for all three axes..
     NegativeBiasConfig = 0b10
-
 }
 
 impl MeasurementMode {

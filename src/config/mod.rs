@@ -5,9 +5,12 @@ pub use measurement_mode::MeasurementMode;
 pub mod measurement_sample_output;
 pub use measurement_sample_output::MeasurementSampleRate;
 pub mod register_a;
-mod register_b;
-mod gain_config;
-mod mode_register;
-mod mode_register_config;
-
 pub use register_a::RegisterA;
+pub mod register_b;
+pub use register_b::RegisterB;
+pub mod gain_config;
+pub use gain_config::Gain;
+pub mod mode_register;
+pub use mode_register::ModeRegister;
+pub mod mode_register_config;
+pub use mode_register_config::OperatingMode;
