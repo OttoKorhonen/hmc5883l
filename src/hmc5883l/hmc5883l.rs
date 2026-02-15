@@ -1,171 +1,144 @@
+use crate::address::Registers::{
+    ConfigurationRegistersA, ConfigurationRegistersB, DataOutputXMsB, ModeRegister,
+};
+use crate::config::{Gain, OperatingMode, RegisterA, RegisterB};
+use crate::errors::hmc5883lerror::Hmc5883lError;
 use crate::hmc5883l::CompassPoint;
-use core::fmt;
+use core::f32::consts::PI;
 use embedded_hal::i2c::SevenBitAddress;
 use libm::atan2f;
-use crate::config::{RegisterA, RegisterB, ModeRegister, Gain, OperatingMode};
-use crate::errors::hmc8553lerror::Hmc8553lError;
 
-const PI: f32 = 3.14159265358979323846264338327950288_f32;
-
-pub struct Hmc5883l<I2c, E> {
+pub struct Hmc5883l<I2c> {
     i2c: I2c,
-    device_address: SevenBitAddress
+    device_address: SevenBitAddress,
 }
 
-impl<I2c, E> Hmc5883l<I2c, E>
+impl<I2c> Hmc5883l<I2c>
 where
-    I2c: embedded_hal::i2c::I2c<Error = E>,
-    E: fmt::Debug
+    I2c: embedded_hal::i2c::I2c,
 {
-    //read 0x3D
-    //write 0x3C
-
-    pub fn new(i2c: I2c, device_address: SevenBitAddress) -> Self {
+    pub const fn new(i2c: I2c, device_address: SevenBitAddress) -> Self {
         Self {
             i2c,
             device_address,
         }
     }
-    
-    pub fn set_register_a(&mut self, register: RegisterA) -> Result<(), Hmc8553lError<I2c::Error>> {
-        self.i2c.write(self.device_address, &[register.get_value()])?;
+
+    pub fn set_register_a(&mut self, register: RegisterA) -> Result<(), Hmc5883lError<I2c::Error>> {
+        self.i2c.write(
+            self.device_address,
+            &[
+                ConfigurationRegistersA.get_register_value(),
+                register.get_value(),
+            ],
+        )?;
         Ok(())
     }
 
-    pub fn set_register_b(&mut self, register: RegisterB) -> Result<(), Hmc8553lError<I2c::Error>> {
-        self.i2c.write(self.device_address, &[register.get_value()])?;
-        Ok(())
-    }
-    
-    pub fn set_mode_register(&mut self, mode_register: ModeRegister) -> Result<(), Hmc8553lError<I2c::Error>> {
-        self.i2c.write(self.device_address, &[mode_register.get_value()])?;
-        Ok(())
-    }
-    
-    pub fn set_gain(&mut self, gain: Gain) -> Result<(), Hmc8553lError<I2c::Error>> {
-        self.i2c.write(self.device_address, &[gain.get_value()])?;
-        Ok(())
-    }
-    
-    pub fn set_operating_mode(&mut self, operating_mode: OperatingMode) -> Result<(), Hmc8553lError<I2c::Error>> {
-        self.i2c.write(self.device_address, &[operating_mode.get_value()])?;
+    pub fn set_register_b(&mut self, register: RegisterB) -> Result<(), Hmc5883lError<I2c::Error>> {
+        self.i2c.write(
+            self.device_address,
+            &[
+                ConfigurationRegistersB.get_register_value(),
+                register.get_value(),
+            ],
+        )?;
         Ok(())
     }
 
-    // fn get_x_register(&mut self) -> [u8; 2] {
-    //     let cmd = [0x03];
-    //     let mut response = [0u8; 6];
-    //     self.i2c
-    //         .write_read(self.device_address, &cmd, &mut response)
-    //         .unwrap();
-    // 
-    //     [response[0], response[1]] // return msb & lsb
-    // }
-    // 
-    // fn get_y_register(&mut self) -> [u8; 2] {
-    //     let cmd = [0x07];
-    //     let mut response = [0u8; 6];
-    //     self.i2c
-    //         .write_read(self.device_address, &cmd, &mut response)
-    //         .unwrap();
-    // 
-    //     [response[0], response[1]] // return msb & lsb
-    // }
-    // 
-    // pub fn get_compasspoint(&mut self, angle: f32) -> CompassPoint {
-    //     match angle {
-    //         0.0..22.0 => CompassPoint::North,
-    //         23.0..66.0 => CompassPoint::NorthEast,
-    //         67.0..112.0 => CompassPoint::East,
-    //         112.0..156.0 => CompassPoint::SouthEast,
-    //         157.0..201.0 => CompassPoint::South,
-    //         202.0..247.0 => CompassPoint::SouthWest,
-    //         248.0..292.0 => CompassPoint::West,
-    //         293.0..337.0 => CompassPoint::NorthWest,
-    //         338.0..360.0 => CompassPoint::North,
-    //         _ => CompassPoint::North,
-    //     }
-    // }
-    // 
-    // ///take single measure
-    // pub fn single_measurement(&mut self, gain: Gain) -> f32 {
-    //     self.cra();
-    //     self.crb(gain);
-    //     self.mode_register(Mode::Single);
-    //     self.delay.delay_ms(6);
-    // 
-    //     let x = self.get_x_register();
-    //     let y = self.get_y_register();
-    // 
-    //     let response = [x[0], x[1], y[0], y[1]];
-    // 
-    //     let gauss_values = self.measure_gauss(&response);
-    // 
-    //     self.atan2_custom(gauss_values[1], gauss_values[0])
-    // }
-    // 
-    // ///take continuous measurement
-    // pub fn continuous_measure(&mut self, gain: Gain) -> f32 {
-    //     self.cra();
-    //     self.crb(gain);
-    //     self.mode_register(Mode::Continuous);
-    //     self.delay.delay_ms(6);
-    // 
-    //     loop {
-    //         let x = self.get_x_register();
-    //         let y = self.get_y_register();
-    // 
-    //         let response = [x[0], x[1], y[0], y[1]];
-    //         let gauss_values = self.measure_gauss(&response);
-    // 
-    //         self.delay.delay_ms(67);
-    // 
-    //         self.atan2_custom(gauss_values[1], gauss_values[0]);
-    //     }
-    // }
-    // 
-    // //East-Counterclockwise Convention y,x
-    // fn atan2_custom(&self, y: f32, x: f32) -> f32 {
-    //     let mut angle = atan2f(y, x) * (180.0 / PI);
-    // 
-    //     if angle < 0.0 {
-    //         angle += 360.0;
-    //     }
-    //     println!("Angle: {:.2}°", angle);
-    //     angle
-    // }
-    // 
-    // fn measure_gauss(&self, raw_data: &[u8; 4]) -> Vec<f32, 2> {
-    //     let mut gauss_values: Vec<f32, 2> = Vec::new();
-    // 
-    //     for chunk in raw_data.chunks(2) {
-    //         let mut direction = ((chunk[0] as i32) << 8) | (chunk[1] as i32);
-    // 
-    //         //handle negative values
-    //         if direction > 0x7FFF {
-    //             direction -= 0x10000 as i32;
-    //         }
-    // 
-    //         //value converted into gauss
-    //         let gauss = direction as f32 / 230.0; // 1090 on muutettava vastaamaan gainia
-    // 
-    //         gauss_values.push(gauss).unwrap();
-    //     }
-    //     gauss_values
-    // }
-    // 
-    // fn cra(&mut self) {
-    //     let cmd = [0x00, 0b0001_1100]; // Configuration Register A (0x00)
-    //     self.i2c.write(self.device_address, &cmd).unwrap();
-    // }
-    // 
-    // fn crb(&mut self, gain: Gain) {
-    //     let cmd = [0x01, gain as u8]; // Configuration Register B (0x01)
-    //     self.i2c.write(self.device_address, &cmd).unwrap();
-    // }
-    // 
-    // fn mode_register(&mut self, mode: Mode) {
-    //     let cmd = [0x02, mode as u8]; // Mode Register (0x02)
-    //     self.i2c.write(self.device_address, &cmd).unwrap();
-    // }
+    pub fn set_mode_register(
+        &mut self,
+        mode_register: ModeRegister,
+    ) -> Result<(), Hmc5883lError<I2c::Error>> {
+        self.i2c.write(
+            self.device_address,
+            &[ModeRegister.get_register_value(), mode_register.get_value()],
+        )?;
+        Ok(())
+    }
+
+    pub fn set_gain(&mut self, gain: Gain) -> Result<(), Hmc5883lError<I2c::Error>> {
+        self.i2c.write(
+            self.device_address,
+            &[
+                ConfigurationRegistersB.get_register_value(),
+                gain.get_value(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    pub fn set_operating_mode(
+        &mut self,
+        operating_mode: OperatingMode,
+    ) -> Result<(), Hmc5883lError<I2c::Error>> {
+        // Sama huomio: Operating Mode on osa Mode Registeriä (0x02).
+        self.i2c.write(
+            self.device_address,
+            &[
+                ModeRegister.get_register_value(),
+                operating_mode.get_value(),
+            ],
+        )?;
+        Ok(())
+    }
+
+    fn read_data_output(&mut self) -> Result<[u8; 6], Hmc5883lError<I2c::Error>> {
+        let mut buffer = [0u8; 6];
+        //DataOutputXMsb jne
+        self.i2c.write_read(
+            self.device_address,
+            &[DataOutputXMsB.get_register_value()],
+            &mut buffer,
+        )?;
+
+        Ok(buffer)
+    }
+
+    pub fn get_angle(&mut self) -> Result<f32, Hmc5883lError<I2c::Error>> {
+        let data_register_output = self.read_data_output()?;
+        let high_byte_x = data_register_output[0] as i16;
+        let low_byte_x = data_register_output[1] as i16;
+
+        let high_byte_y = data_register_output[4] as i16;
+        let low_byte_y = data_register_output[5] as i16;
+
+        let output_y = (high_byte_y << 8) | low_byte_y;
+        let output_x = (high_byte_x << 8) | low_byte_x;
+
+        let gauss = self.measure_gauss(output_x, output_y);
+        let angle = self.atan2_custom(gauss);
+        Ok(angle)
+    }
+
+    fn atan2_custom(&self, gauss: (f32, f32)) -> f32 {
+        let mut angle = atan2f(gauss.1, gauss.0) * (180.0 / PI);
+
+        if angle < 0.0 {
+            angle += 360.0;
+        }
+
+        angle
+    }
+
+    fn measure_gauss(&self, x: i16, y: i16) -> (f32, f32) {
+        let gauss_x = (x as f32) / 230.0;
+        let gauss_y = (y as f32) / 230.0;
+        (gauss_x, gauss_y)
+    }
+
+    pub fn get_compass_point(&mut self, angle: f32) -> CompassPoint {
+        let angle = if angle < 0.0 { angle + 360.0 } else { angle };
+        match angle {
+            x if x >= 337.5 || x < 22.5 => CompassPoint::North,
+            x if x >= 22.5 && x < 67.5 => CompassPoint::NorthEast,
+            x if x >= 67.5 && x < 112.5 => CompassPoint::East,
+            x if x >= 112.5 && x < 157.5 => CompassPoint::SouthEast,
+            x if x >= 157.5 && x < 202.5 => CompassPoint::South,
+            x if x >= 202.5 && x < 247.5 => CompassPoint::SouthWest,
+            x if x >= 247.5 && x < 292.5 => CompassPoint::West,
+            x if x >= 292.5 && x < 337.5 => CompassPoint::NorthWest,
+            _ => CompassPoint::North,
+        }
+    }
 }

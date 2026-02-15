@@ -17,5 +17,5 @@ pub enum Registers {
 }
 
 impl Registers {
-    pub fn get_register_value(&self) -> Self {*self}
+    pub const fn get_register_value(&self) -> u8 {*self as u8}
 }

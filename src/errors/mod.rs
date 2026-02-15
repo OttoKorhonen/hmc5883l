@@ -1,3 +1,3 @@
 
-pub mod hmc8553lerror;
-pub use hmc8553lerror::Hmc8553lError;
+pub mod hmc5883lerror;
+pub use hmc5883lerror::Hmc5883lError;

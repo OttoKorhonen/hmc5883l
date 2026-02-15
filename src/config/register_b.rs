@@ -8,10 +8,10 @@ pub struct RegisterB {
 
 impl RegisterB {
 
-    pub fn new() -> Self {Self {bits: 0}}
-    pub fn get_value(&self) -> u8 { self.bits}
+    pub const fn new() -> Self {Self {bits: 0}}
+    pub const fn get_value(&self) -> u8 { self.bits}
 
-    pub fn set_gain(&mut self, gain: Gain)  {
+    pub const fn set_gain(&mut self, gain: Gain)  {
         self.bits = (self.bits & !MASK_GAIN_CONFIGURATION) | (gain.get_value() & MASK_GAIN_CONFIGURATION);
     }
 }
