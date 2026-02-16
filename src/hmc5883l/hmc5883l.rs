@@ -1,7 +1,7 @@
 use crate::address::Registers::{
-    ConfigurationRegistersA, ConfigurationRegistersB, DataOutputXMsB, ModeRegister,
+    ConfigurationRegistersA, ConfigurationRegistersB, DataOutputXMsB, ModeRegister
 };
-use crate::config::{Gain, OperatingMode, RegisterA, RegisterB};
+use crate::config::{Gain, OperatingMode, OperatingModeRegister, RegisterA, RegisterB};
 use crate::errors::hmc5883lerror::Hmc5883lError;
 use crate::hmc5883l::CompassPoint;
 use core::f32::consts::PI;
@@ -48,7 +48,7 @@ where
 
     pub fn set_mode_register(
         &mut self,
-        mode_register: ModeRegister,
+        mode_register: OperatingModeRegister,
     ) -> Result<(), Hmc5883lError<I2c::Error>> {
         self.i2c.write(
             self.device_address,

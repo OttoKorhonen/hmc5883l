@@ -1,12 +1,12 @@
-use crate::config::mode_register_config::OperatingMode;
+use crate::config::operating_mode_register_config::OperatingMode;
 const MASK_MODE_REGISTER: u8 = 0b0000_0011;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ModeRegister {
+pub struct OperatingModeRegister {
     bits: u8,
 }
 
-impl ModeRegister {
+impl OperatingModeRegister {
     pub const fn new() -> Self {
         Self { bits: 0 }
     }
