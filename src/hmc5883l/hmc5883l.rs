@@ -11,6 +11,7 @@ use libm::atan2f;
 pub struct Hmc5883l<I2c> {
     i2c: I2c,
     device_address: SevenBitAddress,
+    gain: Gain,
 }
 
 impl<I2c> Hmc5883l<I2c>
@@ -21,6 +22,7 @@ where
         Self {
             i2c,
             device_address,
+            gain: Gain::Gain1090,
         }
     }
 
@@ -65,6 +67,7 @@ where
                 gain.get_value(),
             ],
         )?;
+        self.gain = gain;
         Ok(())
     }
 
@@ -122,8 +125,9 @@ where
     }
 
     fn measure_gauss(&self, x: i16, y: i16) -> (f32, f32) {
-        let gauss_x = (x as f32) / 230.0;
-        let gauss_y = (y as f32) / 230.0;
+        let gain = self.gain.lsb_per_gauss();
+        let gauss_x = (x as f32) / gain;
+        let gauss_y = (y as f32) / gain;
         (gauss_x, gauss_y)
     }
 
