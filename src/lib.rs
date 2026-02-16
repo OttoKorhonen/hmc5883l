@@ -1,8 +1,6 @@
 #![no_std]
 extern crate alloc;
-
 pub mod hmc5883l;
-mod errors;
-mod examples;
-mod config;
-mod address;
+pub mod errors;
+pub mod config;
+pub mod address;
