@@ -6,23 +6,41 @@ edition = "2021"
 [lib] 
 name = "hmc5883l"
 path = "src/lib.rs"
+[features]
+default = []
+defmt-impl = ["dep:defmt"]
 
 [dependencies]
 embedded-hal = "1.0.0"
-libm = "0.2"
+defmt = { version = "0.3", optional = true }
 
-[profile.dev]
-opt-level = "s"
+[dev-dependencies]
+# Cortex-M
+cortex-m = "0.7.7"
+cortex-m-rt = "0.7.5"
 
-[profile.release]
-codegen-units = 1
-debug = 2
-debug-assertions = false
-incremental = false
-lto = 'fat'
-opt-level = 's'
-overflow-checks = false
+# Panic Handler
+panic-probe = { version = "0.3", features = ["print-defmt"] }
 
-[[bin]]
-name = "hmc5883_demo"
-path = "src/examples/hmc5883_demo.rs"
+# Embassy
+embassy-executor = { version = "0.6", features = [
+    "arch-cortex-m",
+    "executor-thread",
+    "defmt",
+] }
+embassy-time = { version = "0.3", features = ["defmt", "defmt-timestamp-uptime"] }
+embassy-rp = { version = "0.2", features = [
+    "time-driver",
+    "critical-section-impl",
+    "rp235xa",
+    "binary-info",
+    "defmt",
+] }
+
+# Defmt Logging
+defmt = "0.3"
+defmt-rtt = "0.4"
+embassy-usb = { version = "0.3", features = ["defmt"] }
+heapless = "0.8"
+static_cell = "2.1"
+linux-embedded-hal = "0.4"
