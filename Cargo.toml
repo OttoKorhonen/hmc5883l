@@ -14,6 +14,7 @@ defmt-impl = ["dep:defmt"]
 [dependencies]
 embedded-hal = "1.0.0"
 defmt = { version = "0.3", optional = true }
+libm = "0.2.16"
 
 [dev-dependencies]
 # Cortex-M
