@@ -6,6 +6,7 @@ edition = "2021"
 [lib] 
 name = "hmc5883l"
 path = "src/lib.rs"
+
 [features]
 default = []
 defmt-impl = ["dep:defmt"]
