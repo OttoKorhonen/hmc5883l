@@ -73,7 +73,7 @@ where
 
     pub fn set_operating_mode(
         &mut self,
-        operating_mode: OperatingMode,
+        operating_mode: OperatingModeRegister,
     ) -> Result<(), Hmc5883lError<I2c::Error>> {
         // Sama huomio: Operating Mode on osa Mode Registeriä (0x02).
         self.i2c.write(
