@@ -10,6 +10,7 @@ path = "src/lib.rs"
 [dependencies]
 embedded-hal = "1.0.0"
 libm = "0.2.16"
+serde = { version = "1.0.228", features = ["derive"] }
 
 [dev-dependencies]
 cortex-m-rt = "0.7.5"
