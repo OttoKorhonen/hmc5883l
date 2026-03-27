@@ -1,7 +1,7 @@
 use crate::address::Registers::{
     ConfigurationRegistersA, ConfigurationRegistersB, DataOutputXMsB, ModeRegister
 };
-use crate::config::{Gain, OperatingMode, OperatingModeRegister, RegisterA, RegisterB};
+use crate::config::{Gain, OperatingModeRegister, RegisterA, RegisterB};
 use crate::errors::hmc5883lerror::Hmc5883lError;
 use crate::hmc5883l::CompassPoint;
 use core::f32::consts::PI;

@@ -1,4 +1,5 @@
-#[derive(Debug)]
+use serde::Serialize;
+#[derive(Debug, Serialize)]
 pub enum Hmc5883lError<E>{
     I2cError(E)
 }
