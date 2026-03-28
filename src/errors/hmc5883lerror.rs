@@ -13,7 +13,7 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::I2cError(E) => write!(f, "I2c error: {}", E),
+            Self::I2cError(e) => write!(f, "I2c error: {:?}", e),
         }
     }
 }
